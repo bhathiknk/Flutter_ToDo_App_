@@ -33,23 +33,27 @@ void _onDaySelected(DateTime day, DateTime focusedDay) {
         )
       ),
       //Calander 
-      body: Column(
-        children: [
-          TableCalendar(
-            locale: "en_US",
-            rowHeight: 43,
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-            ),
-            availableGestures: AvailableGestures.all,
-            selectedDayPredicate: (day) => isSameDay(day, today),
-            focusedDay: today,
-            firstDay: DateTime.utc(2000,01,01),
-            lastDay: DateTime.utc(2050,12,31),
-            onDaySelected: _onDaySelected,
-           ),
-        ]
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          children: [
+            Text("Selected Date =" + today.toString().split(" ")[0]),
+            TableCalendar(
+              locale: "en_US",
+              rowHeight: 43,
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+              availableGestures: AvailableGestures.all,
+              selectedDayPredicate: (day) => isSameDay(day, today),
+              focusedDay: today,
+              firstDay: DateTime.utc(2000,01,01),
+              lastDay: DateTime.utc(2050,12,31),
+              onDaySelected: _onDaySelected,
+             ),
+          ]
+        ),
       ),
       //Calander end
      );
