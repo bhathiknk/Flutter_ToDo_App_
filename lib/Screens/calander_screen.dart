@@ -11,6 +11,13 @@ class _CalanderScreenState extends State<CalanderScreen> {
 
 //creating variables to focus day(current day)
   DateTime today = DateTime.now();
+
+//capture the selected date
+void _onDaySelected(DateTime day, DateTime focusedDay) {
+  setState(() {
+    today = day;
+  });
+}
   
   
   @override
@@ -36,9 +43,11 @@ class _CalanderScreenState extends State<CalanderScreen> {
               titleCentered: true,
             ),
             availableGestures: AvailableGestures.all,
+            selectedDayPredicate: (day) => isSameDay(day, today),
             focusedDay: today,
             firstDay: DateTime.utc(2000,01,01),
             lastDay: DateTime.utc(2050,12,31),
+            onDaySelected: _onDaySelected,
            ),
         ]
       ),
