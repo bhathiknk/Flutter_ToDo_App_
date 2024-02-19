@@ -37,7 +37,7 @@ void _onDaySelected(DateTime day, DateTime focusedDay) {
         padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
-            Text("Selected Date =" + today.toString().split(" ")[0]),
+            Text("Selected Date = " + today.toString().split(" ")[0]),
             TableCalendar(
               locale: "en_US",
               rowHeight: 43,
