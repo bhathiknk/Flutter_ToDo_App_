@@ -31,10 +31,14 @@ class _CalanderScreenState extends State<CalanderScreen> {
           TableCalendar(
             locale: "en_US",
             rowHeight: 43,
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
             availableGestures: AvailableGestures.all,
-           focusedDay: today,
-           firstDay: DateTime.utc(2000,01,01),
-           lastDay: DateTime.utc(2050,12,31),
+            focusedDay: today,
+            firstDay: DateTime.utc(2000,01,01),
+            lastDay: DateTime.utc(2050,12,31),
            ),
         ]
       ),
