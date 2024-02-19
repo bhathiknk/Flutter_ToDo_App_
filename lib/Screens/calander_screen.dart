@@ -18,14 +18,25 @@ Map <DateTime, List< Event>> events = {};
 
 //get user inputs to add a event
 TextEditingController _eventController = TextEditingController();
+
+//show add event in the UI
+late final ValueNotifier<List<Event>> _selectedEvents;
   
 
 //capture the selected date
 void _onDaySelected(DateTime day, DateTime focusedDay) {
   setState(() {
     today = day;
+    _selectedEvents = ValueNotifier(_getEventsForDay(today));
   });
 }
+
+
+List<Event> _getEventsForDay(DateTime day) {
+  //return the all events for the selected day
+  return events[day] ?? [];
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,7 +72,12 @@ void _onDaySelected(DateTime day, DateTime focusedDay) {
                 ),
                 actions: [
                   ElevatedButton(
-                    onPressed: (){},
+                    onPressed: (){
+                      //store the event name into the map
+                      events.addAll({today!: [Event(_eventController.text)]
+                      });
+                      Navigator.of(context).pop();
+                    },
                      child: Text("Save"),
                   ),
                 ]
