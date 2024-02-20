@@ -186,7 +186,7 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       children: [
                         Padding(
-                          padding: EdgeInsets.all(10),
+                          padding: EdgeInsets.all(06),//ui pixel bug change 10 to 06
                           child: Image.asset(
                             "images/${imgList[index]}.png",
                             width: 100,
