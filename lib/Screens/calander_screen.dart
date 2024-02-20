@@ -45,6 +45,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         foregroundColor: Colors.black,
         backgroundColor: Colors.white,
@@ -64,7 +65,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
                   child: Text("Add an Event"),
                 ),
                 content: Padding(
-                  padding: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8), //8
                   child: TextField(
                     controller: _eventController,
                   ),
@@ -93,7 +94,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.all(10.0),//10.0
         child: Column(
           children: [
             Text("Selected Date = " + DateFormat('yyyy-MM-dd').format(today)),
@@ -130,10 +131,10 @@ class _CalanderScreenState extends State<CalanderScreen> {
                           //border: Border.all(),
                           borderRadius: BorderRadius.circular(12),
                           color: Color(0xFFB9B7B7).withOpacity(0.2),
-                          
+
                         ),
                         child: ListTile(
-                          onTap: () => print(" "), 
+                          onTap: () => print(" "),
                           title: Text(value[index].title),
                           trailing: Icon(Icons.delete),//delete event
 
