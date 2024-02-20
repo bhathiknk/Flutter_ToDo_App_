@@ -1,58 +1,68 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/etc/event.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
 
 class CalanderScreen extends StatefulWidget {
-
   @override
   State<CalanderScreen> createState() => _CalanderScreenState();
 }
 
 class _CalanderScreenState extends State<CalanderScreen> {
-
-//creating variables to focus day(current day)
   DateTime today = DateTime.now();
+  DateTime? _selectedDay;
+  TextEditingController _eventController = TextEditingController();
+  late final ValueNotifier<List<Event>> _selectedEvents;
 
-  //store the events creayed
-Map <DateTime, List< Event>> events = {};
+  Map<DateTime, List<Event>> events = {};
 
-//get user inputs to add a event
-TextEditingController _eventController = TextEditingController();
-  
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = today;
+    _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
+  }
 
-//capture the selected date
-void _onDaySelected(DateTime day, DateTime focusedDay) {
-  setState(() {
-    today = day;
-  });
-}
+  @override
+  void dispose() {
+    _eventController.dispose();
+    super.dispose();
+  }
+
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    setState(() {
+      today = selectedDay;
+      _selectedDay = selectedDay;
+      _selectedEvents.value = _getEventsForDay(selectedDay);
+    });
+  }
+
+  List<Event> _getEventsForDay(DateTime day) {
+    return events[day] ?? [];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         foregroundColor: Colors.black,
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1.8,
         centerTitle: true,
-        title: Text(
-          'Calander',
-        )
+        title: Text('Calendar'),
       ),
-    
-      //event add button
       floatingActionButton: FloatingActionButton(
-        onPressed: (){
-          //show dilog for user to input event name
+        onPressed: () {
           showDialog(
             context: context,
-            builder: (context){
+            builder: (context) {
               return AlertDialog(
                 scrollable: true,
                 title: Opacity(
-                      opacity: 0.7, 
-                      child: Text("Add an Event"),
-                     ),
-              
+                  opacity: 0.7,
+                  child: Text("Add an Event"),
+                ),
                 content: Padding(
                   padding: EdgeInsets.all(8),
                   child: TextField(
@@ -61,33 +71,32 @@ void _onDaySelected(DateTime day, DateTime focusedDay) {
                 ),
                 actions: [
                   ElevatedButton(
-                    onPressed: (){
-                      //store the event name into the map
-                      Navigator.of(context).pop();
+                    onPressed: () {
+                      if (_selectedDay != null) {
+                        events.addAll({_selectedDay!: [Event(_eventController.text)]});
+                        _selectedEvents.value = _getEventsForDay(_selectedDay!);
+                        Navigator.of(context).pop();
+                      }
                     },
-                     child: Text("Save"),
+                    child: Text("Save"),
                   ),
-                ]
+                ],
               );
-            }
+            },
           );
         },
         child: Icon(Icons.add),
-        //add
         backgroundColor: Color(0xFF674AEF),
         foregroundColor: Colors.white,
-         shape: RoundedRectangleBorder(
-           borderRadius: BorderRadius.circular(15.0), 
-         ),
-         //add end
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
         ),
-
-      //Calander 
+      ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
-            Text("Selected Date = " + today.toString().split(" ")[0]),
+            Text("Selected Date = " + DateFormat('yyyy-MM-dd').format(today)),
             TableCalendar(
               locale: "en_US",
               rowHeight: 43,
@@ -96,16 +105,48 @@ void _onDaySelected(DateTime day, DateTime focusedDay) {
                 titleCentered: true,
               ),
               availableGestures: AvailableGestures.all,
-              selectedDayPredicate: (day) => isSameDay(day, today),
+              selectedDayPredicate: (_selectedDay) => isSameDay(_selectedDay, today),
               focusedDay: today,
-              firstDay: DateTime.utc(2000,01,01),
-              lastDay: DateTime.utc(2050,12,31),
+              firstDay: DateTime.utc(2000, 01, 01),
+              lastDay: DateTime.utc(2050, 12, 31),
               onDaySelected: _onDaySelected,
-             ),
-          ]
+              eventLoader: _getEventsForDay,
+            ),
+            // Event list
+            SizedBox(height: 8.0),
+            Expanded(
+              child: ValueListenableBuilder<List<Event>>(
+                valueListenable: _selectedEvents,
+                builder: (context, value, _) {
+                  return ListView.builder(
+                    itemCount: value.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          //border: Border.all(),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Color(0xFFB9B7B7).withOpacity(0.2),
+                          
+                        ),
+                        child: ListTile(
+                          onTap: () => print(" "), 
+                          title: Text(value[index].title),
+                          trailing: Icon(Icons.delete),//delete event
+
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
-      //Calander end
-     );
+    );
   }
 }
