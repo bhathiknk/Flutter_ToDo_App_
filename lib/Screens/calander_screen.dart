@@ -23,7 +23,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
     _selectedDay = today;
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
   }
-
+//fixing some bugs
   @override
   void dispose() {
     _eventController.dispose();
