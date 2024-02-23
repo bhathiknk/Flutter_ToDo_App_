@@ -69,23 +69,36 @@ class HomePage extends StatelessWidget {
                       size: 30,
                       color: Colors.white,
                     ),
-
-                    //weather condition top right
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Weather',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                    //more vert with drop down
+                    Padding(
+                      padding: EdgeInsets.only(right: 1),
+                    child: PopupMenuButton(
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                          Icon(
+                            Icons.logout_outlined,
+                          color: Colors.black54,
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: 10.0
+                              ),
+                          ),   
+                          Text('LogOut')
+                        ],
                         ),
-                      ),
+                        )
+                      ],
+                      child: Icon(
+                     Icons.more_vert,
+                      size: 30,
+                      color: Colors.white,
                     ),
+                    ),
+                    ),
+                    
                   ],
                 ),
                 SizedBox(height: 20),
