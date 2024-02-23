@@ -69,22 +69,10 @@ class HomePage extends StatelessWidget {
                       size: 30,
                       color: Colors.white,
                     ),
-
-                    //weather condition top right
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Weather',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                      ),
+                    Icon(
+                      Icons.more_vert,
+                      size: 30,
+                      color: Colors.white,
                     ),
                   ],
                 ),
