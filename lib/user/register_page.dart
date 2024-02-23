@@ -3,19 +3,21 @@ import 'package:flutter_todo_app/Screens/home_screen.dart';
 import 'package:flutter_todo_app/components/my_button.dart';
 import 'package:flutter_todo_app/components/my_textfeild.dart';
 import 'package:flutter_todo_app/components/square_title.dart';
-import 'package:flutter_todo_app/user/register_page.dart';
+import 'package:flutter_todo_app/user/login_page.dart';
 
 
 
-class LoginPage extends StatelessWidget {
-   LoginPage({super.key});
+class RegisterPage extends StatelessWidget {
+
+
+   RegisterPage({ super.key, });
    
    //txt editing controller
    final usernameController = TextEditingController();
    final passwordController = TextEditingController();
 
    //user sign in method
-   void signUserIn() {
+   void signUserup() {
      
    }
 
@@ -31,20 +33,20 @@ class LoginPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children:  [
-               const SizedBox(height: 50),
+               const SizedBox(height: 25),
 
               //logo
                const Icon(
-                Icons.account_circle,
-                size: 100,
+                Icons.badge_rounded,
+                size: 50,
               ),
 
-               const SizedBox(height: 50),
+               const SizedBox(height: 25),
 
           
               //welcome back you have been missed!
 
-              Text('Welcome back you\'ve been missed!',
+              Text('Let\'s create and account for you !',
                style: TextStyle(
                 color: Colors.grey[700],
                 fontSize: 16,
@@ -56,7 +58,7 @@ class LoginPage extends StatelessWidget {
               //username text field
               MyTextFeild(
                 controller: usernameController,
-                hintText: 'Username',
+                hintText: 'Email',
                 obscureText: false,
               ),
               
@@ -71,26 +73,22 @@ class LoginPage extends StatelessWidget {
               ),
 
                const SizedBox(height: 10),
-          
-              //forgot password
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text('Forgot password?',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                      )),
-                    ],
-                  ),
-                ),
 
+               //password text field
+              MyTextFeild(
+                controller: passwordController,
+                hintText: 'Confirm Password',
+                obscureText: true,
+              ),
+
+               const SizedBox(height: 10),
+          
+            
                   const SizedBox(height: 25),
               //signin button
                 MyButton(
-                  text: 'Sign In',
-                  onTap: signUserIn,
+                  text: 'Sign Up',
+                  onTap: signUserup,
                 ),
 
                  const SizedBox(height: 50),
@@ -144,19 +142,18 @@ class LoginPage extends StatelessWidget {
               ),
 
               const SizedBox(height: 50),
-              //not a member ? register now
+              //already ahve an account ? Login now
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                  Text('Not a member?',
+                  Text('Already have an account ?',
                   style: TextStyle(
                     color: Colors.grey[700],
                     ),
                     ),
                   const SizedBox(width: 4),
-                   
-
-                  Text('Register now',
+                    
+                  Text('Login now',
                   style: TextStyle(
                     color: Color(0xFF674AEF),
                     fontWeight: FontWeight.bold,

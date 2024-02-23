@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/Screens/home_screen.dart';
 import 'package:flutter_todo_app/Screens/welcome_screen.dart';
 import 'package:flutter_todo_app/user/login_page.dart';
+import 'package:flutter_todo_app/user/register_page.dart';
+
 
 void main() => runApp(MyApp());
 
