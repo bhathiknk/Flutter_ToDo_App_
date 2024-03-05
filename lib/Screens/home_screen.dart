@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/Screens/calander_screen.dart';
 import 'package:flutter_todo_app/Screens/history_screen.dart';
@@ -5,8 +7,41 @@ import 'package:flutter_todo_app/Screens/memofiles_screen.dart';
 import 'package:flutter_todo_app/Screens/memopad_screen.dart';
 import 'package:flutter_todo_app/Screens/timetable_screen.dart';
 import 'package:flutter_todo_app/Screens/todo_screen.dart';
-
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 class HomePage extends StatelessWidget {
+
+  Future<String> getUsername(int userId) async {
+    final url = Uri.parse('http://10.0.2.2:8080/api/users/username/$userId');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      try {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final String username = data['username'];
+        return username;
+      } catch (e) {
+        // Print the response body for debugging
+        print('Error decoding response. Response body: ${response.body}');
+        return 'Unknown';
+      }
+    } else {
+      // Print the error status code and response body for debugging
+      print('Error: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      return 'Unknown';
+    }
+  }
+
+
+
+
+
+  Future<int> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId') ?? -1; // Return -1 if user ID is not available
+  }
+
   //creating static data in lists
   List catNames = [
     "Categories",
@@ -101,19 +136,38 @@ class HomePage extends StatelessWidget {
                     
                   ],
                 ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: EdgeInsets.only(left: 3, bottom: 15),
-                  child: Text(
-                    'Hi ! R.P.D.S.V.R',
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                      wordSpacing: 2,
-                      color: Colors.white,
-                    ),
-                  ),
+                SizedBox(height: 10),
+                FutureBuilder<int>(
+                  future: getUserId(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      final int userId = snapshot.data ?? -1;
+                      return FutureBuilder<String>(
+                        future: getUsername(userId),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else {
+                            final String username = snapshot.data ?? 'Unknown';
+                            return Text(
+                              'Hi, $username',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black.withOpacity(0.5),
+                              ),
+                            );
+                          }
+                        },
+                      );
+                    }
+                  },
                 ),
                 // Weather API area
                 Container(

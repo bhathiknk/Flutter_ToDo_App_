@@ -5,6 +5,7 @@ import 'package:flutter_todo_app/components/my_textfeild.dart';
 import 'package:flutter_todo_app/components/square_title.dart';
 import 'package:flutter_todo_app/user/register_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({Key? key});
@@ -26,6 +27,12 @@ class LoginPage extends StatelessWidget {
     if (response.statusCode == 200) {
       // User logged in successfully
       print('User logged in successfully');
+
+
+      // Save user ID
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setInt('userId', int.parse(response.body));
+
 
       // Navigate to the HomePage
       Navigator.push(
