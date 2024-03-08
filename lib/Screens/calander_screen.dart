@@ -12,10 +12,11 @@ class CalanderScreen extends StatefulWidget {
 }
 
 class Event {
+  int? id;
   String title;
   DateTime date;
 
-  Event(this.title, {required this.date});
+  Event(this.title, {required this.date, this.id});
 }
 
 class _CalanderScreenState extends State<CalanderScreen> {
@@ -24,7 +25,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
   late final ValueNotifier<List<Event>> _selectedEvents;
   TextEditingController _eventController = TextEditingController();
 
-  Map<DateTime, List<Event>> events = {};
   List<Event> _userEvents = [];
 
   @override
@@ -58,6 +58,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
           return Event(
             event['title'],
             date: DateTime.parse(event['date']),
+            id: event['id'],
           );
         }).toList();
       });
@@ -81,7 +82,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
   }
 
   List<Event> _getEventsForDay(DateTime day) {
-    return events[day] ?? [];
+    return _userEvents.where((event) => isSameDay(event.date, day)).toList();
   }
 
   Future<void> insertEvent(String title, DateTime eventDate) async {
@@ -109,6 +110,90 @@ class _CalanderScreenState extends State<CalanderScreen> {
       throw Exception('Failed to create event');
     }
   }
+
+  Future<void> deleteEvent(int eventId) async {
+    final response = await http.delete(
+      Uri.parse('http://10.0.2.2:8080/api/events/$eventId'),
+    );
+
+    if (response.statusCode == 200) {
+      print('Event deleted successfully');
+      showSuccessDialog(context, 'Event deleted successfully');
+      // Refresh user events after deleting an event
+      fetchUserEvents();
+    } else if (response.statusCode == 404) {
+      print('Event not found');
+      showSnackBar(context, 'Event not found');
+    } else {
+      print('Error deleting event');
+      showSnackBar(context, 'Error deleting event');
+    }
+  }
+
+  Container buildEventContainer(Event userEvent) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFFF5F3FF),
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      margin: EdgeInsets.symmetric(vertical: 10.0),
+      padding: EdgeInsets.all(10.0),
+      child: ListTile(
+        title: Text(
+          userEvent.title,
+          style: TextStyle(
+            color: Colors.black54,
+          ),
+        ),
+        subtitle: Text(
+          DateFormat('yyyy-MM-dd').format(userEvent.date),
+          style: TextStyle(
+            color: Color(0xFF674AEF),
+          ),
+        ),
+        trailing: IconButton(
+          icon: Icon(Icons.delete),
+          onPressed: () {
+            showDeleteConfirmationDialog(userEvent);
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> showDeleteConfirmationDialog(Event userEvent) async {
+    if (userEvent.id == null) {
+      // Handle the case where the event ID is null
+      showSnackBar(context, 'Invalid event ID');
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Delete Event'),
+          content: Text('Are you sure you want to delete this event?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                await deleteEvent(userEvent.id!); // Assuming id is available
+              },
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   void showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -188,6 +273,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,7 +287,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: ListView( // Wrap with ListView
+        child: ListView(
           children: [
             Text("Selected Date = " +
                 DateFormat('yyyy-MM-dd').format(today)),
@@ -222,7 +308,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
               eventLoader: _getEventsForDay,
             ),
             SizedBox(height: 10),
-
             Container(
               margin: EdgeInsets.symmetric(vertical: 10.0),
               child: ElevatedButton(
@@ -232,8 +317,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
                 child: Text('Add Event'),
               ),
             ),
-
-
             Container(
               margin: EdgeInsets.only(top: 10.0, bottom: 20.0),
               child: Text(
@@ -246,39 +329,13 @@ class _CalanderScreenState extends State<CalanderScreen> {
                 ),
               ),
             ),
-
             if (_userEvents.isNotEmpty)
-
               Column(
                 children: [
                   for (Event userEvent in _userEvents)
-
-                    Container(
-
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF5F3FF),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      margin: EdgeInsets.symmetric(vertical: 10.0),
-                      padding: EdgeInsets.all(10.0),
-                      child: ListTile(
-                        title: Text(
-                          userEvent.title,
-                          style: TextStyle(
-                            color: Colors.black54,
-                          ),
-                        ),
-                        subtitle: Text(
-                          DateFormat('yyyy-MM-dd').format(userEvent.date),
-                          style: TextStyle(
-                            color: Color(0xFF674AEF),
-                          ),
-                        ),
-                      ),
-                    ),
+                    buildEventContainer(userEvent),
                 ],
               ),
-
           ],
         ),
       ),
