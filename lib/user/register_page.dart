@@ -111,7 +111,7 @@ class RegisterPage extends StatelessWidget {
               //username text field
               MyTextFeild(
                 controller: usernameController,
-                hintText: 'Email',
+                hintText: 'UserName',
                 obscureText: false,
               ),
 

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/etc/event.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,18 +25,51 @@ class _CalanderScreenState extends State<CalanderScreen> {
   TextEditingController _eventController = TextEditingController();
 
   Map<DateTime, List<Event>> events = {};
+  List<Event> _userEvents = [];
 
   @override
   void initState() {
     super.initState();
     _selectedDay = today;
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
+
+    // Fetch user events when the screen is initialized
+    fetchUserEvents();
   }
 
   @override
   void dispose() {
     _eventController.dispose();
     super.dispose();
+  }
+
+  Future<void> fetchUserEvents() async {
+    int userId = await getUserId();
+
+    final response = await http.get(
+      Uri.parse('http://10.0.2.2:8080/api/events/user/$userId'),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> eventData = jsonDecode(response.body);
+
+      setState(() {
+        _userEvents = eventData.map((event) {
+          return Event(
+            event['title'],
+            date: DateTime.parse(event['date']),
+          );
+        }).toList();
+      });
+    } else {
+      print('Error fetching user events');
+      throw Exception('Failed to fetch user events');
+    }
+  }
+
+  Future<int> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId') ?? -1;
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
@@ -50,11 +82,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
 
   List<Event> _getEventsForDay(DateTime day) {
     return events[day] ?? [];
-  }
-
-  Future<int> getUserId() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('userId') ?? -1; // Return -1 if user ID is not available
   }
 
   Future<void> insertEvent(String title, DateTime eventDate) async {
@@ -74,44 +101,14 @@ class _CalanderScreenState extends State<CalanderScreen> {
 
     if (response.statusCode == 200) {
       print('Event created successfully');
-      await retrieveEvents();
       showSuccessDialog(context, 'Event saved successfully');
+      // Refresh user events after adding a new event
+      fetchUserEvents();
     } else {
       print('Error creating event');
       throw Exception('Failed to create event');
     }
   }
-
-  Future<void> retrieveEvents() async {
-    int userId = await getUserId();
-
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:8080/api/events/user/$userId'),
-    );
-
-    if (response.statusCode == 200) {
-      List<dynamic> responseBody = jsonDecode(response.body);
-
-      // Clear existing events
-      events.clear();
-
-      // Add retrieved events to the map
-      responseBody.forEach((event) {
-        if (event['eventDate'] != null && event['title'] != null) {
-          DateTime eventDate = DateFormat('yyyy-MM-dd').parse(event['eventDate']);
-          Event newEvent = Event(event['title'], date: eventDate);
-          events[eventDate] = [newEvent];
-        }
-      });
-
-      // Update the displayed events
-      _selectedEvents.value = _getEventsForDay(_selectedDay!);
-    } else {
-      print('Error retrieving events');
-      throw Exception('Failed to retrieve events');
-    }
-  }
-
 
   void showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -162,10 +159,12 @@ class _CalanderScreenState extends State<CalanderScreen> {
                 onPressed: () async {
                   // Validate and save the event
                   if (_eventTitleController.text.isNotEmpty) {
-                    await insertEvent(_eventTitleController.text, _selectedDay!);
+                    await insertEvent(
+                        _eventTitleController.text, _selectedDay!);
 
                     // Close the 'Add Event' dialog
-                    Navigator.popUntil(context, (route) => route.isFirst);
+                    Navigator.popUntil(
+                        context, (route) => route.isFirst);
 
                     // Navigate to CalanderScreen
                     Navigator.pushReplacement(
@@ -174,7 +173,8 @@ class _CalanderScreenState extends State<CalanderScreen> {
                     );
 
                     // Show the success dialog
-                    showSuccessDialog(context, 'Event saved successfully');
+                    showSuccessDialog(
+                        context, 'Event saved successfully');
                   } else {
                     showSnackBar(context, 'Please enter a title');
                   }
@@ -187,9 +187,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
       },
     );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -204,9 +201,10 @@ class _CalanderScreenState extends State<CalanderScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: Column(
+        child: ListView( // Wrap with ListView
           children: [
-            Text("Selected Date = " + DateFormat('yyyy-MM-dd').format(today)),
+            Text("Selected Date = " +
+                DateFormat('yyyy-MM-dd').format(today)),
             TableCalendar(
               locale: "en_US",
               rowHeight: 43,
@@ -215,7 +213,8 @@ class _CalanderScreenState extends State<CalanderScreen> {
                 titleCentered: true,
               ),
               availableGestures: AvailableGestures.all,
-              selectedDayPredicate: (_selectedDay) => isSameDay(_selectedDay, today),
+              selectedDayPredicate: (_selectedDay) =>
+                  isSameDay(_selectedDay, today),
               focusedDay: today,
               firstDay: DateTime.utc(2000, 01, 01),
               lastDay: DateTime.utc(2050, 12, 31),
@@ -223,12 +222,63 @@ class _CalanderScreenState extends State<CalanderScreen> {
               eventLoader: _getEventsForDay,
             ),
             SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                _showAddEventDialog(context);
-              },
-              child: Text('Add Event'),
+
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 10.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  _showAddEventDialog(context);
+                },
+                child: Text('Add Event'),
+              ),
             ),
+
+
+            Container(
+              margin: EdgeInsets.only(top: 10.0, bottom: 20.0),
+              child: Text(
+                "Your Events",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black.withOpacity(0.6),
+                ),
+              ),
+            ),
+
+            if (_userEvents.isNotEmpty)
+
+              Column(
+                children: [
+                  for (Event userEvent in _userEvents)
+
+                    Container(
+
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      margin: EdgeInsets.symmetric(vertical: 10.0),
+                      padding: EdgeInsets.all(10.0),
+                      child: ListTile(
+                        title: Text(
+                          userEvent.title,
+                          style: TextStyle(
+                            color: Colors.black54,
+                          ),
+                        ),
+                        subtitle: Text(
+                          DateFormat('yyyy-MM-dd').format(userEvent.date),
+                          style: TextStyle(
+                            color: Color(0xFF674AEF),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
           ],
         ),
       ),

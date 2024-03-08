@@ -213,13 +213,24 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
 
-                  Text(
-                    'Register now',
-                    style: TextStyle(
-                      color: Color(0xFF674AEF),
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to the RegisterPage
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => RegisterPage()),
+                      );
+                    },
+                    child: Text(
+                      'Register now',
+                      style: TextStyle(
+                        color: Color(0xFF674AEF),
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
-                  ),
+                  )
+
                 ],
               )
             ],
