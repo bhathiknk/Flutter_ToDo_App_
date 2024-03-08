@@ -1,19 +1,29 @@
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/etc/event.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class CalanderScreen extends StatefulWidget {
   @override
   State<CalanderScreen> createState() => _CalanderScreenState();
 }
 
+class Event {
+  String title;
+  DateTime date;
+
+  Event(this.title, {required this.date});
+}
+
 class _CalanderScreenState extends State<CalanderScreen> {
   DateTime today = DateTime.now();
   DateTime? _selectedDay;
-  TextEditingController _eventController = TextEditingController();
   late final ValueNotifier<List<Event>> _selectedEvents;
+  TextEditingController _eventController = TextEditingController();
 
   Map<DateTime, List<Event>> events = {};
 
@@ -23,7 +33,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
     _selectedDay = today;
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
   }
-//fixing some bugs
+
   @override
   void dispose() {
     _eventController.dispose();
@@ -42,6 +52,145 @@ class _CalanderScreenState extends State<CalanderScreen> {
     return events[day] ?? [];
   }
 
+  Future<int> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId') ?? -1; // Return -1 if user ID is not available
+  }
+
+  Future<void> insertEvent(String title, DateTime eventDate) async {
+    int userId = await getUserId();
+
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:8080/api/events'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'userId': userId,
+        'title': title,
+        'date': DateFormat('yyyy-MM-dd').format(eventDate),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Event created successfully');
+      await retrieveEvents();
+      showSuccessDialog(context, 'Event saved successfully');
+    } else {
+      print('Error creating event');
+      throw Exception('Failed to create event');
+    }
+  }
+
+  Future<void> retrieveEvents() async {
+    int userId = await getUserId();
+
+    final response = await http.get(
+      Uri.parse('http://10.0.2.2:8080/api/events/user/$userId'),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> responseBody = jsonDecode(response.body);
+
+      // Clear existing events
+      events.clear();
+
+      // Add retrieved events to the map
+      responseBody.forEach((event) {
+        if (event['eventDate'] != null && event['title'] != null) {
+          DateTime eventDate = DateFormat('yyyy-MM-dd').parse(event['eventDate']);
+          Event newEvent = Event(event['title'], date: eventDate);
+          events[eventDate] = [newEvent];
+        }
+      });
+
+      // Update the displayed events
+      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+    } else {
+      print('Error retrieving events');
+      throw Exception('Failed to retrieve events');
+    }
+  }
+
+
+  void showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void showSuccessDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Success'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the success dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAddEventDialog(BuildContext context) async {
+    TextEditingController _eventTitleController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Event'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _eventTitleController,
+                decoration: InputDecoration(labelText: 'Event Title'),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  // Validate and save the event
+                  if (_eventTitleController.text.isNotEmpty) {
+                    await insertEvent(_eventTitleController.text, _selectedDay!);
+
+                    // Close the 'Add Event' dialog
+                    Navigator.popUntil(context, (route) => route.isFirst);
+
+                    // Navigate to CalanderScreen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => CalanderScreen()),
+                    );
+
+                    // Show the success dialog
+                    showSuccessDialog(context, 'Event saved successfully');
+                  } else {
+                    showSnackBar(context, 'Please enter a title');
+                  }
+                },
+                child: Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,48 +202,8 @@ class _CalanderScreenState extends State<CalanderScreen> {
         centerTitle: true,
         title: Text('Calendar'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                scrollable: true,
-                title: Opacity(
-                  opacity: 0.7,
-                  child: Text("Add an Event"),
-                ),
-                content: Padding(
-                  padding: EdgeInsets.all(8), //8
-                  child: TextField(
-                    controller: _eventController,
-                  ),
-                ),
-                actions: [
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_selectedDay != null) {
-                        events.addAll({_selectedDay!: [Event(_eventController.text)]});
-                        _selectedEvents.value = _getEventsForDay(_selectedDay!);
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: Text("Save"),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Color(0xFF674AEF),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-      ),
       body: Padding(
-        padding: const EdgeInsets.all(10.0),//10.0
+        padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
             Text("Selected Date = " + DateFormat('yyyy-MM-dd').format(today)),
@@ -113,37 +222,12 @@ class _CalanderScreenState extends State<CalanderScreen> {
               onDaySelected: _onDaySelected,
               eventLoader: _getEventsForDay,
             ),
-            // Event list
-            SizedBox(height: 8.0),
-            Expanded(
-              child: ValueListenableBuilder<List<Event>>(
-                valueListenable: _selectedEvents,
-                builder: (context, value, _) {
-                  return ListView.builder(
-                    itemCount: value.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          //border: Border.all(),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Color(0xFFB9B7B7).withOpacity(0.2),
-
-                        ),
-                        child: ListTile(
-                          onTap: () => print(" "),
-                          title: Text(value[index].title),
-                          trailing: Icon(Icons.delete),//delete event
-
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                _showAddEventDialog(context);
+              },
+              child: Text('Add Event'),
             ),
           ],
         ),

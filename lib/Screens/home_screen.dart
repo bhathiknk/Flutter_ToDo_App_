@@ -9,6 +9,7 @@ import 'package:flutter_todo_app/Screens/timetable_screen.dart';
 import 'package:flutter_todo_app/Screens/todo_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 class HomePage extends StatelessWidget {
 
   Future<String> getUsername(int userId) async {
@@ -33,7 +34,26 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  Future<Map<String, dynamic>> getWeatherData() async {
+    final String apiKey = 'b2bbc7b07ebc93d7aabc7e4c6c107a0b';
+    final String cityName = 'Colombo'; // Replace 'YourCityName' with the actual city name
+    final String apiUrl =
+        'https://api.openweathermap.org/data/2.5/weather?q=$cityName&appid=$apiKey&units=metric';
 
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> weatherData = json.decode(response.body);
+        return weatherData;
+      } else {
+        throw Exception('Failed to load weather data');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('Failed to load weather data');
+    }
+  }
 
 
 
@@ -179,8 +199,36 @@ class HomePage extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  
+                  child: FutureBuilder<Map<String, dynamic>>(
+                    future: getWeatherData(), // Define this function to fetch weather data
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return Text('Error loading weather data');
+                      } else {
+                        final weatherData = snapshot.data;
+                        final time = DateFormat.Hm().format(DateTime.now());
+
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Weather: ${weatherData?['main']?['temp'] ?? 'N/A'}°C',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              'Time: $time',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ],
+                        );
+                      }
+                    },
+                  ),
                 ),
+
               ],
             ),
           ),
