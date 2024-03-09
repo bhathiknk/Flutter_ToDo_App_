@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart'; // Add this import statement
 
 class MemoFilesScreen extends StatefulWidget {
   @override
@@ -12,11 +15,13 @@ class MemoFilesScreen extends StatefulWidget {
 
 class _MemoFilesScreenState extends State<MemoFilesScreen> {
   late int userId;
+  List<FileData> savedFiles = [];
 
   @override
   void initState() {
     super.initState();
     _getUserId();
+    _getSavedFiles(); // Fetch saved files on initialization
   }
 
   Future<void> _getUserId() async {
@@ -24,6 +29,30 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
     setState(() {
       userId = prefs.getInt('userId') ?? -1;
     });
+  }
+
+  Future<void> _getSavedFiles() async {
+    try {
+      await _getUserId(); // Wait for _getUserId to complete
+
+      var response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/files/user/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        List<FileData> files = (json.decode(response.body) as List)
+            .map((file) => FileData.fromMap(file))
+            .toList();
+
+        setState(() {
+          savedFiles = files;
+        });
+      } else {
+        print('Error fetching saved files: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Error fetching saved files: $e');
+    }
   }
 
   @override
@@ -36,21 +65,27 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
         centerTitle: true,
         title: Text('Memo Files'),
       ),
-      body: Center(
-        child: Text('Your memo files content goes here.'),
+      body: ListView(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        children: [
+          SizedBox(height: 16),
+          Text('Saved Files:', style: TextStyle(fontSize: 20)),
+          SizedBox(height: 16),
+          Column(
+            children: savedFiles
+                .map((file) => FileContainer(file: file))
+                .toList(),
+          ),
+        ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0, right: 16.0),
-        child: FloatingActionButton(
-          onPressed: () {
-            _openFilePicker();
-          },
-          tooltip: 'Add',
-          child: Icon(Icons.add),
-          backgroundColor: Color(0xFF674AEF), // Set your preferred background color
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _openFilePicker();
+        },
+        tooltip: 'Add',
+        child: Icon(Icons.add),
+        backgroundColor: Color(0xFF674AEF), // Set your preferred background color
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 
@@ -70,6 +105,9 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
   }
 
   void _showFilePreviewPopup(PlatformFile file) {
+    TextEditingController fileNameController = TextEditingController();
+    String fileFormat = file.extension ?? 'Unknown'; // Get file format
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -78,7 +116,25 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('File Name: ${file.name}'),
+              Text('File Format: $fileFormat'),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Text('Rename:'),
+                  SizedBox(width: 10),
+                  Flexible(
+                    child: TextField(
+                      controller: fileNameController,
+                      decoration: InputDecoration(
+                        labelText: 'New File Name',
+                        hintText: 'Enter a new name',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Text('Original File Name: ${file.name}'),
               Text('File Size: ${file.size} bytes'),
               // Add more file details as needed
             ],
@@ -93,7 +149,7 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // Close the preview popup
-                _saveFile(file);
+                _saveFile(file, fileNameController.text);
               },
               child: Text('Save'),
             ),
@@ -103,9 +159,14 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
     );
   }
 
-  void _saveFile(PlatformFile file) async {
+
+
+  void _saveFile(PlatformFile file, String newFileName) async {
     try {
-      // Create FormData and add the file
+      // Determine the file type using the mime package
+      String fileFormat = file.extension ?? ''; // Get file format
+
+      // Create FormData and add the file with the new name and type
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('http://10.0.2.2:8080/api/files/upload'),
@@ -119,7 +180,8 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
       request.files.add(http.MultipartFile.fromBytes(
         'file',
         fileBytes,
-        filename: file.name,
+        filename: newFileName.isEmpty ? '${file.name}' : '$newFileName.$fileFormat',
+        contentType: MediaType.parse('application/octet-stream'),
       ));
 
       // Send the API request
@@ -128,6 +190,7 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
       // Handle the API response as needed
       if (response.statusCode == 200) {
         _showSuccessPopup();
+        _getSavedFiles(); // Fetch updated saved files after saving a new file
       } else {
         print('Error saving file: ${response.reasonPhrase}');
       }
@@ -135,6 +198,7 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
       print('Error saving file: $e');
     }
   }
+
 
   void _showSuccessPopup() {
     showDialog(
@@ -153,6 +217,57 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class FileData {
+  final String fileName;
+  final String uploadDate;
+
+  FileData({
+    required this.fileName,
+    required this.uploadDate,
+  });
+
+  factory FileData.fromMap(Map<String, dynamic> map) {
+    return FileData(
+      fileName: map['fileName'].toString(),
+      uploadDate: map['uploadDate'].toString(),
+    );
+  }
+}
+
+class FileContainer extends StatelessWidget {
+  final FileData file;
+
+  FileContainer({required this.file});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFFF5F3FF),
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      margin: EdgeInsets.symmetric(vertical: 10.0),
+      padding: EdgeInsets.all(10.0),
+      child: ListTile(
+        title: Text(
+          file.fileName,
+          style: TextStyle(
+            color: Colors.black54,
+            fontSize: 18,
+          ),
+        ),
+        subtitle: Text(
+          'Upload Date: ${file.uploadDate}',
+          style: TextStyle(
+            color: Color(0xFF674AEF),
+            fontSize: 16,
+          ),
+        ),
+      ),
     );
   }
 }
