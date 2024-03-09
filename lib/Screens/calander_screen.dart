@@ -284,6 +284,12 @@ class _CalanderScreenState extends State<CalanderScreen> {
         elevation: 1.8,
         centerTitle: true,
         title: Text('Calendar'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop(); // Navigate back when the back button is pressed
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
@@ -318,7 +324,7 @@ class _CalanderScreenState extends State<CalanderScreen> {
               ),
             ),
             Container(
-              margin: EdgeInsets.only(top: 10.0, bottom: 20.0),
+              margin: EdgeInsets.only(top: 5.0, bottom: 20.0),
               child: Text(
                 "Your Events",
                 textAlign: TextAlign.center,
