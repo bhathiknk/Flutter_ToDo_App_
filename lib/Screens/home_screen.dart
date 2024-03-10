@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,8 +11,10 @@ import 'package:flutter_todo_app/Screens/todo_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-class HomePage extends StatelessWidget {
 
+import '../user/login_page.dart';
+
+class HomePage extends StatelessWidget {
   Future<String> getUsername(int userId) async {
     final url = Uri.parse('http://10.0.2.2:8080/api/users/username/$userId');
     final response = await http.get(url);
@@ -22,12 +25,10 @@ class HomePage extends StatelessWidget {
         final String username = data['username'];
         return username;
       } catch (e) {
-        // Print the response body for debugging
         print('Error decoding response. Response body: ${response.body}');
         return 'Unknown';
       }
     } else {
-      // Print the error status code and response body for debugging
       print('Error: ${response.statusCode}');
       print('Response body: ${response.body}');
       return 'Unknown';
@@ -36,7 +37,7 @@ class HomePage extends StatelessWidget {
 
   Future<Map<String, dynamic>> getWeatherData() async {
     final String apiKey = 'b2bbc7b07ebc93d7aabc7e4c6c107a0b';
-    final String cityName = 'Colombo'; // Replace 'YourCityName' with the actual city name
+    final String cityName = 'Colombo';
     final String apiUrl =
         'https://api.openweathermap.org/data/2.5/weather?q=$cityName&appid=$apiKey&units=metric';
 
@@ -55,40 +56,32 @@ class HomePage extends StatelessWidget {
     }
   }
 
-
-
   Future<int> getUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('userId') ?? -1; // Return -1 if user ID is not available
+    return prefs.getInt('userId') ?? -1;
   }
 
-  //creating static data in lists
-  List catNames = [
-    "Categories",
-    'Classes',
-    'Free Courses',
-    'Bookstore',
-    'Live Courses',
-    'LeaderBoard',
-  ];
+  Future<void> _logout(BuildContext context) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
 
-  List<Color> catColors = [
-    Color(0xFFFFCF2F),
-    Color(0xFF6FE08D),
-    Color(0xFF61BDFD),
-    Color(0xFFFC7F7F),
-    Color(0xFFCB84FB),
-    Color(0xFF78E667),
-  ];
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
 
-  List<Icon> catIcons = [
-    Icon(Icons.category, color: Colors.white, size: 30),
-    Icon(Icons.video_library, color: Colors.white, size: 30),
-    Icon(Icons.assessment, color: Colors.white, size: 30),
-    Icon(Icons.store, color: Colors.white, size: 30),
-    Icon(Icons.play_circle_fill, color: Colors.white, size: 30),
-    Icon(Icons.emoji_events, color: Colors.white, size: 30),
-  ];
+      // Show a snackbar when user logs out and comes back to login page
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You have been successfully logged out! Come back again.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('Error during logout: $e');
+    }
+  }
 
   List<String> imgList = [
     'ToDo',
@@ -124,36 +117,32 @@ class HomePage extends StatelessWidget {
                       size: 30,
                       color: Colors.white,
                     ),
-                    //more vert with drop down
-                    Padding(
-                      padding: EdgeInsets.only(right: 1),
-                    child: PopupMenuButton(
+                    PopupMenuButton(
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           child: Row(
                             children: [
-                          Icon(
-                            Icons.logout_outlined,
-                          color: Colors.black54,
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: 10.0
+                              Icon(
+                                Icons.logout_outlined,
+                                color: Colors.black54,
                               ),
-                          ),   
-                          Text('LogOut')
-                        ],
+                              Padding(
+                                padding: EdgeInsets.only(left: 10.0),
+                              ),
+                              InkWell(
+                                onTap: () => _logout(context),
+                                child: Text('Log Out'),
+                              ),
+                            ],
+                          ),
                         ),
-                        )
                       ],
                       child: Icon(
-                     Icons.more_vert,
-                      size: 30,
-                      color: Colors.white,
+                        Icons.more_vert,
+                        size: 30,
+                        color: Colors.white,
+                      ),
                     ),
-                    ),
-                    ),
-                    
                   ],
                 ),
                 SizedBox(height: 10),
@@ -169,7 +158,8 @@ class HomePage extends StatelessWidget {
                       return FutureBuilder<String>(
                         future: getUsername(userId),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
                             return CircularProgressIndicator();
                           } else if (snapshot.hasError) {
                             return Text('Error: ${snapshot.error}');
@@ -189,7 +179,6 @@ class HomePage extends StatelessWidget {
                     }
                   },
                 ),
-                // Weather API area
                 Container(
                   margin: EdgeInsets.only(top: 5, bottom: 20),
                   width: MediaQuery.of(context).size.width,
@@ -200,9 +189,10 @@ class HomePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: FutureBuilder<Map<String, dynamic>>(
-                    future: getWeatherData(), // Define this function to fetch weather data
+                    future: getWeatherData(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
                         return CircularProgressIndicator();
                       } else if (snapshot.hasError) {
                         return Text('Error loading weather data');
@@ -218,22 +208,16 @@ class HomePage extends StatelessWidget {
                               style: TextStyle(fontSize: 18),
                             ),
                             SizedBox(height: 10),
-                            Text(
-                              'Time: $time',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                            LiveTimeDisplay(),
                           ],
                         );
                       }
                     },
                   ),
                 ),
-
               ],
             ),
           ),
-
-          // Large buttons area (main) 
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             child: GridView.builder(
@@ -243,14 +227,13 @@ class HomePage extends StatelessWidget {
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio:
-                    (MediaQuery.of(context).size.height - 50 - 25) / (4 * 240),
+                (MediaQuery.of(context).size.height - 50 - 25) / (4 * 240),
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
               ),
               itemBuilder: (context, index) {
                 return InkWell(
                   onTap: () {
-                    // Navigate to different pages based on the button clicked
                     switch (index) {
                       case 0:
                         Navigator.push(
@@ -301,7 +284,7 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       children: [
                         Padding(
-                          padding: EdgeInsets.all(06),//ui pixel bug change 10 to 06
+                          padding: EdgeInsets.all(06),
                           child: Image.asset(
                             "images/${imgList[index]}.png",
                             width: 100,
@@ -335,6 +318,43 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class LiveTimeDisplay extends StatefulWidget {
+  @override
+  _LiveTimeDisplayState createState() => _LiveTimeDisplayState();
+}
+
+class _LiveTimeDisplayState extends State<LiveTimeDisplay> {
+  late String currentTime;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize the time
+    updateTime();
+
+    // Update the time every second
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      updateTime();
+    });
+  }
+
+  void updateTime() {
+    final String formattedTime = DateFormat.Hm().format(DateTime.now());
+    setState(() {
+      currentTime = formattedTime;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Time: $currentTime',
+      style: TextStyle(fontSize: 18),
     );
   }
 }
