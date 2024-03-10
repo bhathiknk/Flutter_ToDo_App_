@@ -1,12 +1,31 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:mime/mime.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart'; // Add this import statement
+import 'package:http_parser/http_parser.dart';
+
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Memo Files App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MemoFilesScreen(),
+    );
+  }
+}
 
 class MemoFilesScreen extends StatefulWidget {
   @override
@@ -159,8 +178,6 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
     );
   }
 
-
-
   void _saveFile(PlatformFile file, String newFileName) async {
     try {
       // Determine the file type using the mime package
@@ -199,7 +216,6 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
     }
   }
 
-
   void _showSuccessPopup() {
     showDialog(
       context: context,
@@ -222,16 +238,19 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
 }
 
 class FileData {
+  final int id;
   final String fileName;
   final String uploadDate;
 
   FileData({
+    required this.id,
     required this.fileName,
     required this.uploadDate,
   });
 
   factory FileData.fromMap(Map<String, dynamic> map) {
     return FileData(
+      id: map['id'] as int? ?? -1, // Provide a default value if 'fileId' is null
       fileName: map['fileName'].toString(),
       uploadDate: map['uploadDate'].toString(),
     );
@@ -267,7 +286,78 @@ class FileContainer extends StatelessWidget {
             fontSize: 16,
           ),
         ),
+        onTap: () {
+          _viewFileContent(context, file);
+        },
       ),
     );
   }
+
+  void _viewFileContent(BuildContext context, FileData file) async {
+    try {
+      var response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/files/${file.id}/content'),
+      );
+
+      if (response.statusCode == 200) {
+        // Assume that the response.body contains the PDF content as bytes
+        // Make sure to handle different content types appropriately
+        int fileId = file.id;
+        String fileName = file.fileName;
+        Uint8List pdfBytes = response.bodyBytes;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PDFView(
+              filePath: null,
+              pdfData: pdfBytes,
+              // Add other parameters as needed
+            ),
+          ),
+        );
+      } else {
+        print('Error fetching file content. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Error'),
+              content: Text('Error fetching file content. Status code: ${response.statusCode}'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the error popup
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e, stackTrace) {
+      print('Error fetching file content: $e\n$stackTrace');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Error fetching file content: $e'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the error popup
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
 }
