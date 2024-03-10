@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
-
 void main() {
   runApp(MyApp());
 }
@@ -293,7 +292,22 @@ class FileContainer extends StatelessWidget {
     );
   }
 
-  void _viewFileContent(BuildContext context, FileData file) async {
+  void _viewFileContent(BuildContext context, FileData file) {
+    if (file.fileName.toLowerCase().endsWith('.pdf')) {
+      // PDF file
+      _viewPDFContent(context, file);
+    } else if (file.fileName.toLowerCase().endsWith('.png') ||
+        file.fileName.toLowerCase().endsWith('.jpg') ||
+        file.fileName.toLowerCase().endsWith('.jpeg')) {
+      // Image file
+      _viewImageContent(context, file);
+    } else {
+      // Handle other file types as needed
+      print('Unsupported file type.');
+    }
+  }
+
+  void _viewPDFContent(BuildContext context, FileData file) async {
     try {
       var response = await http.get(
         Uri.parse('http://10.0.2.2:8080/api/files/${file.id}/content'),
@@ -309,11 +323,7 @@ class FileContainer extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PDFView(
-              filePath: null,
-              pdfData: pdfBytes,
-              // Add other parameters as needed
-            ),
+            builder: (context) => PDFViewerScreen(pdfData: pdfBytes),
           ),
         );
       } else {
@@ -359,5 +369,113 @@ class FileContainer extends StatelessWidget {
     }
   }
 
+  void _viewImageContent(BuildContext context, FileData file) async {
+    try {
+      var response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/files/${file.id}/content'),
+      );
 
+      if (response.statusCode == 200) {
+        // Assume that the response.body contains the image content as bytes
+        // Make sure to handle different content types appropriately
+        int fileId = file.id;
+        String fileName = file.fileName;
+        Uint8List imageBytes = response.bodyBytes;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImageViewerScreen(imageData: imageBytes),
+          ),
+        );
+      } else {
+        print('Error fetching image content. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Error'),
+              content: Text('Error fetching image content. Status code: ${response.statusCode}'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the error popup
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e, stackTrace) {
+      print('Error fetching image content: $e\n$stackTrace');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Error fetching image content: $e'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the error popup
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+}
+
+class PDFViewerScreen extends StatelessWidget {
+  final Uint8List pdfData;
+
+  PDFViewerScreen({required this.pdfData});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('PDF Viewer'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: PDFView(
+        filePath: null,
+        pdfData: pdfData,
+        // Add other parameters as needed
+      ),
+    );
+  }
+}
+
+class ImageViewerScreen extends StatelessWidget {
+  final Uint8List imageData;
+
+  ImageViewerScreen({required this.imageData});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Image Viewer'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Image.memory(imageData),
+    );
+  }
 }
