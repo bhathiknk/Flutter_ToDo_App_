@@ -108,23 +108,38 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
               shrinkWrap: true,
               itemCount: tasks.length,
               itemBuilder: (context, index) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(50.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFFFFFF), // Set background color
+                return Dismissible(
+                  key: UniqueKey(),
+                  onDismissed: (direction) {
+                    _deleteTask(day, tasks[index]);
+                  },
+                  background: Container(
+                    color: Colors.red,
+                    child: Icon(
+                      Icons.delete,
+                      color: Colors.black,
                     ),
-                    margin: const EdgeInsets.all(5.0),
-                    child: ListTile(
-                      title: Text(
-                        tasks[index].taskName,
-                        style: TextStyle(color: Colors.black),
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20.0),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(50.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFFFFFF), // Set background color
                       ),
-                      subtitle: Text(
-                        'Time: ${tasks[index].formattedTime} ${tasks[index].timePeriod}',
-                        style: TextStyle(color: Colors.black),
+                      margin: const EdgeInsets.all(5.0),
+                      child: ListTile(
+                        title: Text(
+                          tasks[index].taskName,
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        subtitle: Text(
+                          'Time: ${tasks[index].formattedTime} ${tasks[index].timePeriod}',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        // You can add more details or actions here
                       ),
-                      // You can add more details or actions here
                     ),
                   ),
                 );
@@ -373,6 +388,34 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
       }
     } catch (error) {
       print('Error fetching tasks: $error');
+    }
+  }
+
+  Future<void> _deleteTask(String day, Task task) async {
+    if (userId != -1) {
+      final response = await http.delete(
+        Uri.parse('http://10.0.2.2:8080/api/timetable/deleteTask/$userId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'day': day,
+          'taskName': task.taskName,
+          'startTime': task.startTime,
+          'endTime': task.endTime,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Task deleted successfully, now fetch the updated data
+        await fetchTasksForDay(day, getTasksListForDay(day));
+      } else {
+        // Handle the error
+        print('Failed to delete task. Error: ${response.body}');
+      }
+    } else {
+      // Handle the case when userId is not available
+      print('UserId not available');
     }
   }
 
