@@ -48,7 +48,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('Weekly Tasks'),
+        title: Text('Weekly TimeTable'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -71,6 +71,13 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
   }
 
   Widget buildDayColumn(String day, List<Task> tasks) {
+    // Sort tasks based on start time
+    tasks.sort((a, b) {
+      DateTime aStartTime = DateTime.parse('2022-01-01 ${a.startTime.padLeft(2, '0')}:00:00');
+      DateTime bStartTime = DateTime.parse('2022-01-01 ${b.startTime.padLeft(2, '0')}:00:00');
+      return aStartTime.compareTo(bStartTime);
+    });
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -101,10 +108,25 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
               shrinkWrap: true,
               itemCount: tasks.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(tasks[index].taskName),
-                  subtitle: Text('${tasks[index].startTime} - ${tasks[index].endTime}'),
-                  // You can add more details or actions here
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(50.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFFFFFF), // Set background color
+                    ),
+                    margin: const EdgeInsets.all(5.0),
+                    child: ListTile(
+                      title: Text(
+                        tasks[index].taskName,
+                        style: TextStyle(color: Colors.black),
+                      ),
+                      subtitle: Text(
+                        'Time: ${tasks[index].formattedTime} ${tasks[index].timePeriod}',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                      // You can add more details or actions here
+                    ),
+                  ),
                 );
               },
             ),
@@ -114,55 +136,170 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     );
   }
 
+  String startSelectedPeriod = 'AM';
+  String endSelectedPeriod = 'AM';
+
   void _showAddTaskDialog(String day, List<Task> tasks) {
     TextEditingController taskController = TextEditingController();
-    TextEditingController startTimeController = TextEditingController();
-    TextEditingController endTimeController = TextEditingController();
+    TextEditingController startHourController = TextEditingController();
+    TextEditingController endHourController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add Task'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: taskController,
-                decoration: InputDecoration(labelText: 'Task Name'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Add Task'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: taskController,
+                    decoration: InputDecoration(labelText: 'Task Name'),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: startHourController,
+                          decoration: InputDecoration(labelText: 'Start Hour'),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              // Automatically determine AM/PM for start time
+                              startSelectedPeriod = _determinePeriod(value);
+                            });
+                          },
+                        ),
+                      ),
+                      DropdownButton<String>(
+                        value: startSelectedPeriod,
+                        items: ['AM', 'PM']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? value) {
+                          setState(() {
+                            startSelectedPeriod = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: endHourController,
+                          decoration: InputDecoration(labelText: 'End Hour'),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              // Automatically determine AM/PM for end time
+                              endSelectedPeriod = _determinePeriod(value);
+                            });
+                          },
+                        ),
+                      ),
+                      DropdownButton<String>(
+                        value: endSelectedPeriod,
+                        items: ['AM', 'PM']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? value) {
+                          setState(() {
+                            endSelectedPeriod = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  // Display selected AM/PM values
+                  Text('Start Time: ${startHourController.text} $startSelectedPeriod'),
+                  Text('End Time: ${endHourController.text} $endSelectedPeriod'),
+                ],
               ),
-              TextField(
-                controller: startTimeController,
-                decoration: InputDecoration(labelText: 'Start Time'),
-              ),
-              TextField(
-                controller: endTimeController,
-                decoration: InputDecoration(labelText: 'End Time'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                _addTaskToTimeTable(day, taskController.text, startTimeController.text, endTimeController.text);
-                Navigator.pop(context);
-              },
-              child: Text('Add'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _addTaskToTimeTable(
+                      day,
+                      taskController.text,
+                      _formatTime(startHourController.text, startSelectedPeriod),
+                      _formatTime(endHourController.text, endSelectedPeriod),
+                    );
+                    Navigator.pop(context);
+                    _showSuccessMessage();
+                  },
+                  child: Text('Add'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
+  String _determinePeriod(String hour) {
+    // Convert hour to int and determine AM/PM
+    try {
+      int hourValue = int.parse(hour);
+      return (hourValue >= 12) ? 'PM' : 'AM';
+    } catch (e) {
+      return 'AM'; // Default to 'AM' if parsing fails
+    }
+  }
+
+  String _formatTime(String time, String period) {
+    try {
+      // Convert time to 24-hour format
+      int hours = int.parse(time.split(':')[0]);
+      if (period == 'PM' && hours < 12) {
+        hours += 12;
+      } else if (period == 'AM' && hours == 12) {
+        hours = 0;
+      }
+
+      // Ensure the hours are within the valid range (0-23)
+      hours = hours % 24;
+
+      // Convert the hours to a two-digit string
+      String formattedHours = hours.toString().padLeft(2, '0');
+
+      // Return the adjusted time
+      return '$formattedHours:${time.split(':')[1]}:00';
+    } catch (e) {
+      // Handle any parsing errors here
+      print('Error formatting time: $e');
+      return time; // Return the original time if an error occurs
+    }
+  }
+
   void _addTaskToTimeTable(String day, String taskName, String startTime, String endTime) async {
     if (userId != -1) {
+      // Format the time with selected AM/PM
+      String formattedStartTime = _formatTime(startTime, startSelectedPeriod);
+      String formattedEndTime = _formatTime(endTime, endSelectedPeriod);
+
+      // Format the time for the backend
+      String backendFormattedStartTime = _formatBackendTime(formattedStartTime, startSelectedPeriod);
+      String backendFormattedEndTime = _formatBackendTime(formattedEndTime, endSelectedPeriod);
+
       final response = await http.post(
         Uri.parse('http://10.0.2.2:8080/api/timetable/addTask/$userId'),
         headers: <String, String>{
@@ -171,14 +308,14 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
         body: jsonEncode(<String, dynamic>{
           'day': day,
           'taskName': taskName,
-          'startTime': startTime,
-          'endTime': endTime,
+          'startTime': backendFormattedStartTime,
+          'endTime': backendFormattedEndTime,
         }),
       );
 
       if (response.statusCode == 200) {
-        // Task added successfully, you may update the local state or perform any other actions
-        fetchTasksForDay(day, getTasksListForDay(day));
+        // Task added successfully, now fetch the updated data
+        await fetchTasksForDay(day, getTasksListForDay(day));
       } else {
         // Handle the error
         print('Failed to add task. Error: ${response.body}');
@@ -186,6 +323,30 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     } else {
       // Handle the case when userId is not available
       print('UserId not available');
+    }
+  }
+
+  String _formatBackendTime(String time, String period) {
+    try {
+      // Convert time to 24-hour format
+      int hours = int.parse(time.split(':')[0]);
+      if (period == 'PM' && hours < 12) {
+        hours += 12;
+      } else if (period == 'AM' && hours == 12) {
+        hours = 0;
+      }
+
+      // Ensure the hours are within the valid range (0-23)
+      hours = hours % 24;
+
+      // Convert the hours back to a two-digit string
+      String formattedHours = hours.toString().padLeft(2, '0');
+
+      return '$formattedHours:${time.split(':')[1]}:00';
+    } catch (e) {
+      // Handle any parsing errors here
+      print('Error formatting time for backend: $e');
+      return time; // Return the original time if an error occurs
     }
   }
 
@@ -203,6 +364,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
             taskName: task['taskName'],
             startTime: task['startTime'],
             endTime: task['endTime'],
+            timePeriod: _determinePeriod(task['startTime']),
           ));
         });
         setState(() {}); // Update the UI after fetching tasks
@@ -234,14 +396,40 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
         return [];
     }
   }
+
+  void _showSuccessMessage() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Success'),
+          content: Text('Task added successfully!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class Task {
   final String taskName;
   final String startTime;
   final String endTime;
+  final String timePeriod; // Added field to store AM/PM
 
-  Task({required this.taskName, required this.startTime, required this.endTime});
+  Task({required this.taskName, required this.startTime, required this.endTime, required this.timePeriod});
+
+  // Define a getter for formattedTime
+  String get formattedTime {
+    return '$startTime - $endTime';
+  }
 }
 
 void main() {
