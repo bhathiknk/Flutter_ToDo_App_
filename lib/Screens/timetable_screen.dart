@@ -22,7 +22,16 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
   @override
   void initState() {
     super.initState();
-    getUserId(); // Call getUserId in initState
+    getUserId().then((value) {
+      // Fetch tasks for each day after getting the userId
+      fetchTasksForDay('Monday', mondayTasks);
+      fetchTasksForDay('Tuesday', tuesdayTasks);
+      fetchTasksForDay('Wednesday', WednesdayTasks);
+      fetchTasksForDay('Thursday', ThursdayTasks);
+      fetchTasksForDay('Friday', FridayTasks);
+      fetchTasksForDay('Saturday', SaturdayTasks);
+      fetchTasksForDay('Sunday', SundayTasks);
+    });
   }
 
   Future<int> getUserId() async {
@@ -169,6 +178,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
 
       if (response.statusCode == 200) {
         // Task added successfully, you may update the local state or perform any other actions
+        fetchTasksForDay(day, getTasksListForDay(day));
       } else {
         // Handle the error
         print('Failed to add task. Error: ${response.body}');
@@ -176,6 +186,52 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     } else {
       // Handle the case when userId is not available
       print('UserId not available');
+    }
+  }
+
+  Future<void> fetchTasksForDay(String day, List<Task> tasks) async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/timetable/$userId/$day'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> taskData = json.decode(response.body);
+        tasks.clear(); // Clear existing tasks
+        taskData.forEach((task) {
+          tasks.add(Task(
+            taskName: task['taskName'],
+            startTime: task['startTime'],
+            endTime: task['endTime'],
+          ));
+        });
+        setState(() {}); // Update the UI after fetching tasks
+      } else {
+        print('Failed to fetch tasks for $day. Error: ${response.body}');
+      }
+    } catch (error) {
+      print('Error fetching tasks: $error');
+    }
+  }
+
+  List<Task> getTasksListForDay(String day) {
+    switch (day) {
+      case 'Monday':
+        return mondayTasks;
+      case 'Tuesday':
+        return tuesdayTasks;
+      case 'Wednesday':
+        return WednesdayTasks;
+      case 'Thursday':
+        return ThursdayTasks;
+      case 'Friday':
+        return FridayTasks;
+      case 'Saturday':
+        return SaturdayTasks;
+      case 'Sunday':
+        return SundayTasks;
+      default:
+        return [];
     }
   }
 }
