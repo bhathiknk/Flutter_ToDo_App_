@@ -43,6 +43,8 @@ dependencies:
   path_provider: ^2.0.8
   syncfusion_flutter_pdfviewer: ^19.4.47-nullsafety
   flutter_pdfview: ^1.0.4
+  flutter_summernote: ^1.1.1
+  google_fonts: ^2.0.0
 
 
   # The following adds the Cupertino Icons font to your application.
