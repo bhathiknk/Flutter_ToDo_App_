@@ -409,6 +409,9 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
       if (response.statusCode == 200) {
         // Task deleted successfully, now fetch the updated data
         await fetchTasksForDay(day, getTasksListForDay(day));
+
+        // Show success message after deleting the task
+        _showDeleteSuccessMessage();
       } else {
         // Handle the error
         print('Failed to delete task. Error: ${response.body}');
@@ -417,6 +420,26 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
       // Handle the case when userId is not available
       print('UserId not available');
     }
+  }
+
+  void _showDeleteSuccessMessage() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Success'),
+          content: Text('Task deleted successfully!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   List<Task> getTasksListForDay(String day) {
