@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/Screens/home_screen.dart';
 
+import '../user/login_page.dart';
+
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -88,7 +90,7 @@ class WelcomeScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.push(context,
                            MaterialPageRoute(
-                            builder: (context) => HomePage(),
+                            builder: (context) => LoginPage(),
                           ));
                         },
                         child: Container(

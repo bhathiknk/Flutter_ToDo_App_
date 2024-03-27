@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,18 +38,140 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
+  Future<List<dynamic>> _fetchTodos(int userId) async {
+    final response = await http.get(
+      Uri.parse('http://10.0.2.2:8080/api/todos?userId=$userId'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+      return responseData;
+    } else {
+      throw Exception('Failed to load todos');
+    }
+  }
+
   Widget _buildTodoList() {
-    return ListView.builder(
-      itemCount: todoEntries.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(todoEntries[index].title),
-          subtitle: Text(todoEntries[index].description),
-          // You can add more details or actions here
-        );
+    return FutureBuilder<int>(
+      future: getUserId(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else {
+          int userId = snapshot.data ?? -1;
+          return SizedBox(
+            height: 200, // Adjust the height as needed
+            child: FutureBuilder<List<dynamic>>(
+              future: _fetchTodos(userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else {
+                  List<dynamic>? todos = snapshot.data;
+                  return ListView.builder(
+                    itemCount: todos?.length ?? 0,
+                    itemBuilder: (context, index) {
+                      var todo = todos![index];
+                      String title = todo['todoTitle'] ?? 'No Title';
+                      String description = todo['todoDescription'] ?? 'No Description';
+                      String time = todo['todoTime'] ?? 'No Time';
+                      int todoId = todo['id'];
+                      return Container(
+                        margin: EdgeInsets.all(8.0), // Adjust margin as needed
+                        padding: EdgeInsets.all(16.0), // Adjust padding as needed
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5F3FF), // Set background color
+                          borderRadius: BorderRadius.circular(8.0), // Set border radius
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  title,
+                                  style: TextStyle(
+                                    fontSize: 18.0, // Set title font size
+                                    fontWeight: FontWeight.bold, // Set title font weight
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () {
+                                    _deleteTodoById(todoId);
+                                  },
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8.0),
+                            Text(
+                              description,
+                              style: TextStyle(
+                                fontSize: 14.0, // Set description font size
+                              ),
+                            ),
+                            SizedBox(height: 8.0),
+                            Text(
+                              'Time: $time',
+                              style: TextStyle(
+                                fontSize: 12.0, // Set time font size
+                                fontStyle: FontStyle.italic, // Set italic font style
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
+            ),
+          );
+        }
       },
     );
   }
+
+  Future<void> _deleteTodoById(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://10.0.2.2:8080/api/todos/$id'),
+      );
+
+      if (response.statusCode == 200) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Success'),
+                content: Text('Todo deleted successfully!'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        setState(() {});
+      } else {
+        // Handle errors
+        print('Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle exceptions
+      print('Exception: $e');
+    }
+  }
+
 
   void _showAddTodoDialog() async {
     TextEditingController titleController = TextEditingController();
@@ -168,6 +292,7 @@ class _TodoScreenState extends State<TodoScreen> {
       },
     );
   }
+
 
 
   Future<int> getUserId() async {
