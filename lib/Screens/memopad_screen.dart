@@ -1,7 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_summernote/flutter_summernote.dart';
-import 'package:flutter_todo_app/Screens/home_screen.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MemoPadScreen());
@@ -57,15 +59,7 @@ class _NotesPageState extends State<NotesPage> {
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
-                setState(() {
-                  Navigator.push(context,
-                      MaterialPageRoute(
-                        builder: (context) => HomePage(),
-                      ));
-
-                });
-                // Handle back button press
-
+                Navigator.pop(context); // Navigate back to the previous screen
               },
             ),
             elevation: 0,
@@ -75,9 +69,8 @@ class _NotesPageState extends State<NotesPage> {
                   // Handle save button press
                   final value = await _keyEditor.currentState?.getText();
                   if (value != null && value.isNotEmpty) {
-                    setState(() {
-                      todoItems.add(value);
-                    });
+                    // Call API to save memo
+                    await saveMemo(value);
                   }
                 },
                 child: Container(
@@ -160,10 +153,9 @@ class _NotesPageState extends State<NotesPage> {
                   Icons.delete,
                   color: Colors.black,
                 ),
-                onPressed: () {
-                  setState(() {
-                    todoItems.remove(text);
-                  });
+                onPressed: () async {
+                  // Call API to delete memo
+                  await deleteMemo(text);
                 },
               ),
             ],
@@ -171,5 +163,51 @@ class _NotesPageState extends State<NotesPage> {
         ),
       ),
     );
+  }
+
+  Future<void> saveMemo(String text) async {
+    try {
+      // Make POST request to save memo
+      final response = await http.post(
+        Uri.parse('http://your-api-url/api/memos'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'content': text}),
+      );
+
+      if (response.statusCode == 201) {
+        // If memo saved successfully, add it to the list
+        setState(() {
+          todoItems.add(text);
+        });
+      } else {
+        // Handle error
+        print('Failed to save memo: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle exceptions
+      print('Exception: $e');
+    }
+  }
+
+  Future<void> deleteMemo(String text) async {
+    try {
+      // Make DELETE request to delete memo
+      final response = await http.delete(
+        Uri.parse('http://your-api-url/api/memos/$text'),
+      );
+
+      if (response.statusCode == 200) {
+        // If memo deleted successfully, remove it from the list
+        setState(() {
+          todoItems.remove(text);
+        });
+      } else {
+        // Handle error
+        print('Failed to delete memo: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle exceptions
+      print('Exception: $e');
+    }
   }
 }
