@@ -45,6 +45,7 @@ dependencies:
   flutter_pdfview: ^1.0.4
   flutter_summernote: ^1.1.1
   google_fonts: ^2.0.0
+  lottie: ^1.0.1
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -56,6 +57,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

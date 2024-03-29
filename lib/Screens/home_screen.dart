@@ -11,7 +11,7 @@ import 'package:flutter_todo_app/Screens/todo_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-
+import 'package:lottie/lottie.dart';
 import '../user/login_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -168,9 +168,11 @@ class HomePage extends StatelessWidget {
                             return Text(
                               'Hi, $username',
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black.withOpacity(0.5),
+                                fontSize: 25,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1,
+                                wordSpacing: 2,
+                                color: Colors.white,
                               ),
                             );
                           }
@@ -329,6 +331,7 @@ class LiveTimeDisplay extends StatefulWidget {
 
 class _LiveTimeDisplayState extends State<LiveTimeDisplay> {
   late String currentTime;
+  late String animationAsset;
 
   @override
   void initState() {
@@ -337,6 +340,9 @@ class _LiveTimeDisplayState extends State<LiveTimeDisplay> {
     // Initialize the time
     updateTime();
 
+    //Initialize the animation assets
+    animationAsset="";
+
     // Update the time every second
     Timer.periodic(Duration(seconds: 1), (timer) {
       updateTime();
@@ -344,17 +350,48 @@ class _LiveTimeDisplayState extends State<LiveTimeDisplay> {
   }
 
   void updateTime() {
+    final DateTime now = DateTime.now();
     final String formattedTime = DateFormat.Hm().format(DateTime.now());
     setState(() {
       currentTime = formattedTime;
+
+      //Determine animation asset based on time of day
+      if(now.hour >= 6 && now.hour < 12){
+        //Morning
+        animationAsset = 'images/Morning.json';
+      }
+
+      //Evening
+      else if(now.hour >= 12 && now.hour < 18){
+        animationAsset = 'images/Evening.json';
+      }
+      //Night
+      else{
+        animationAsset = 'images/Night.json';
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'Time: $currentTime',
-      style: TextStyle(fontSize: 18),
+    return Column(
+      children: [
+        Text(
+          'Time: $currentTime',
+          style: TextStyle(fontSize: 18),
+        ),
+        SizedBox(height: 10),
+        Container(
+          height: 70,
+          width: 70,
+          child: animationAsset.isNotEmpty
+              ? Lottie.asset(
+            animationAsset,
+            fit: BoxFit.cover,
+          )
+              : SizedBox(), // If animationAsset is empty, display an empty SizedBox
+        ),
+      ],
     );
   }
 }
