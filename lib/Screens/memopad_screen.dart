@@ -3,19 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 void main() {
-  runApp(MemoPadScreen());
+  runApp(MaterialApp(
+    home: MemoPadScreen(),
+  ));
 }
+
 
 class MemoPadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter MemoPad',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('MemoPad'),
+        centerTitle: true,
       ),
-      home: NotesPage(title: 'Memo Pad'),
+
+      body: NotesPage(title: 'Memo Pad'),
     );
   }
 }
@@ -152,18 +157,6 @@ class _NotesPageState extends State<NotesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F3FF),
-      appBar: AppBar(
-        backgroundColor: Color(0xFF674AEF),
-        title: Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 22.0,
-            color: Colors.black,
-            fontFamily: 'Roboto-Regular',
-          ),
-        ),
-        centerTitle: true,
-      ),
       body: Column(
         children: <Widget>[
           Expanded(
