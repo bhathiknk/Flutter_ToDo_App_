@@ -72,7 +72,6 @@ class _MemoFilesScreenState extends State<MemoFilesRecover> {
       print('Error fetching saved files: $e');
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,19 +98,8 @@ class _MemoFilesScreenState extends State<MemoFilesRecover> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-        },
-        tooltip: 'Add',
-        child: Icon(Icons.add),
-        backgroundColor: Color(0xFF674AEF), // Set your preferred background color
-      ),
     );
   }
-
-
-
-
 }
 
 class FileData {
@@ -170,13 +158,84 @@ class FileContainer extends StatelessWidget {
         trailing: IconButton(
           icon: Icon(Icons.restore),
           onPressed: () {
-
+            _deleteFile(context, file.id);
           },
         ),
       ),
     );
   }
 
+  void _deleteFile(BuildContext context, int id) async {
+    try {
+      var response = await http.delete(
+        Uri.parse('http://10.0.2.2:8080/api/trash/files/$id'),
+      );
+
+      if (response.statusCode == 200) {
+        // File deleted successfully
+        refreshFiles(); // Call the callback function
+
+        // Show success dialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Success'),
+              content: Text('File restore successfully!'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        // Show error dialog
+        print('Error deleting file: ${response.reasonPhrase}');
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Error'),
+              content: Text('Error deleting file: ${response.reasonPhrase}'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the error popup
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      // Show error dialog
+      print('Error deleting file: $e');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Error deleting file: $e'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the error popup
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 
   void _viewFileContent(BuildContext context, FileData file) {
     if (file.fileName.toLowerCase().endsWith('.pdf')) {
