@@ -150,6 +150,7 @@ class _TodoScreenState extends State<TodoScreen> {
               return AlertDialog(
                 title: Text('Success'),
                 content: Text('Todo deleted successfully!'),
+
                 actions: [
                   TextButton(
                     onPressed: () {
@@ -260,6 +261,17 @@ class _TodoScreenState extends State<TodoScreen> {
         );
 
         if (response.statusCode == 201) {
+          // Parse the response body to get the newly added todo
+          final Map<String, dynamic> responseData = json.decode(response.body);
+          final newTodo = TodoEntry(
+            title: title,
+            description: description,
+            time: selectedTime ?? TimeOfDay.now(),
+          );
+          // Add the new todo to the list
+          setState(() {
+            todoEntries.add(newTodo);
+          });
           _showSuccessMessage();
         } else {
           // Handle errors
@@ -273,6 +285,7 @@ class _TodoScreenState extends State<TodoScreen> {
       print('Exception: $e');
     }
   }
+
   void _showSuccessMessage() {
     showDialog(
       context: context,

@@ -15,6 +15,7 @@ import 'package:lottie/lottie.dart';
 import '../user/login_page.dart';
 
 class HomePage extends StatelessWidget {
+
   Future<String> getUsername(int userId) async {
     final url = Uri.parse('http://10.0.2.2:8080/api/users/username/$userId');
     final response = await http.get(url);
@@ -187,7 +188,7 @@ class HomePage extends StatelessWidget {
                   height: 150,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Color(0xFFF5F3FF),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: FutureBuilder<Map<String, dynamic>>(
@@ -303,14 +304,7 @@ class HomePage extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 10),
-                        Text(
-                          "Objectives add here",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ),
+
                       ],
                     ),
                   ),

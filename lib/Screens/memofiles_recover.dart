@@ -80,7 +80,7 @@ class _MemoFilesScreenState extends State<MemoFilesRecover> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('Memo Files'),
+        title: Text('Memo Files Recover'),
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
