@@ -96,12 +96,20 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       body: ListView(
         children: [
           Container(
             padding: EdgeInsets.only(top: 15, left: 15, right: 15, bottom: 10),
             decoration: BoxDecoration(
-              color: Color(0xFF674AEF),
+              gradient: RadialGradient(
+                colors: [
+                  Color(0xFF7300FF),
+                  Color(0xFF5813AB),
+                ],
+                radius: 1.0,
+                center: Alignment.center,
+              ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -114,7 +122,7 @@ class HomePage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Icon(
-                      Icons.dashboard,
+                      Icons.access_time_filled,
                       size: 30,
                       color: Colors.white,
                     ),
@@ -188,7 +196,7 @@ class HomePage extends StatelessWidget {
                   height: 150,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Color(0xFFF5F3FF),
+                    color: Color(0xFF000000),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: FutureBuilder<Map<String, dynamic>>(
@@ -208,7 +216,10 @@ class HomePage extends StatelessWidget {
                           children: [
                             Text(
                               'Weather: ${weatherData?['main']?['temp'] ?? 'N/A'}°C',
-                              style: TextStyle(fontSize: 18),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18),
+
                             ),
                             SizedBox(height: 10),
                             LiveTimeDisplay(),
@@ -372,7 +383,9 @@ class _LiveTimeDisplayState extends State<LiveTimeDisplay> {
       children: [
         Text(
           'Time: $currentTime',
-          style: TextStyle(fontSize: 18),
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18),
         ),
         SizedBox(height: 10),
         Container(

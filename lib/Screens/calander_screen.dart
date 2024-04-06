@@ -194,7 +194,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
     );
   }
 
-
   void showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -273,7 +272,6 @@ class _CalanderScreenState extends State<CalanderScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -284,6 +282,12 @@ class _CalanderScreenState extends State<CalanderScreen> {
         elevation: 1.8,
         centerTitle: true,
         title: Text('Calendar'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
       ),
 
       body: Padding(
@@ -330,6 +334,20 @@ class _CalanderScreenState extends State<CalanderScreen> {
                 ),
               ),
             ),
+            // Display message if no events available
+            if (_userEvents.isEmpty)
+              Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Text(
+                  'No events available.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            // Display events
             if (_userEvents.isNotEmpty)
               Column(
                 children: [
@@ -343,3 +361,13 @@ class _CalanderScreenState extends State<CalanderScreen> {
     );
   }
 }
+
+void main() {
+  runApp(MaterialApp(
+    initialRoute: '/',
+    routes: {
+      '/': (context) => CalanderScreen(),
+    },
+  ));
+}
+

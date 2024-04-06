@@ -83,7 +83,14 @@ class _MemoFilesScreenState extends State<MemoFilesScreen> {
         centerTitle: true,
         title: Text('Memo Files'),
       ),
-      body: ListView(
+      body: savedFiles.isEmpty
+          ? Center(
+        child: Text(
+          'No files available.',
+          style: TextStyle(fontSize: 20),
+        ),
+      )
+          : ListView(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         children: [
           SizedBox(height: 16),
@@ -373,6 +380,7 @@ class FileContainer extends StatelessWidget {
       );
     }
   }
+
   void _viewFileContent(BuildContext context, FileData file) {
     if (file.fileName.toLowerCase().endsWith('.pdf')) {
       // PDF file

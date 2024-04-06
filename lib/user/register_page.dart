@@ -196,23 +196,37 @@ class RegisterPage extends StatelessWidget {
 
               const SizedBox(height: 50),
               //already ahve an account ? Login now
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Already have an account ?',
-                    style: TextStyle(
-                      color: Colors.grey[700],
+              //already have an account ? Login now
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginPage(),
                     ),
-                  ),
-                  const SizedBox(width: 4),
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account ?',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Login now',
+                      style: TextStyle(
+                        color: Color(0xFF674AEF),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                  Text('Login now',
-                    style: TextStyle(
-                      color: Color(0xFF674AEF),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],)
 
             ],
           ),

@@ -72,10 +72,15 @@ class _TodoScreenState extends State<TodoScreen> {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else {
                   List<dynamic>? todos = snapshot.data;
+                  if (todos == null || todos.isEmpty) {
+                    return Center(
+                      child: Text('No todos available.'),
+                    );
+                  }
                   return ListView.builder(
-                    itemCount: todos?.length ?? 0,
+                    itemCount: todos.length,
                     itemBuilder: (context, index) {
-                      var todo = todos![index];
+                      var todo = todos[index];
                       String title = todo['todoTitle'] ?? 'No Title';
                       String description = todo['todoDescription'] ?? 'No Description';
                       String time = todo['todoTime'] ?? 'No Time';
@@ -144,24 +149,23 @@ class _TodoScreenState extends State<TodoScreen> {
       );
 
       if (response.statusCode == 200) {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('Success'),
-                content: Text('Todo deleted successfully!'),
-
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('OK'),
-                  ),
-                ],
-              );
-            },
-          );
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Success'),
+              content: Text('Todo deleted successfully!'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
         setState(() {});
       } else {
         // Handle errors
@@ -172,7 +176,6 @@ class _TodoScreenState extends State<TodoScreen> {
       print('Exception: $e');
     }
   }
-
 
   void _showAddTodoDialog() async {
     TextEditingController titleController = TextEditingController();
@@ -305,8 +308,6 @@ class _TodoScreenState extends State<TodoScreen> {
       },
     );
   }
-
-
 
   Future<int> getUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();

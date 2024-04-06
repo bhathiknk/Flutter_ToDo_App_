@@ -63,7 +63,7 @@ class WelcomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'TODO App', 
+                      'Sortify',
                       style: TextStyle(
                       fontSize: 25,
                       fontWeight: FontWeight.w600,
@@ -74,7 +74,7 @@ class WelcomeScreen extends StatelessWidget {
                     SizedBox(height: 15),
                     Padding(padding: EdgeInsets.symmetric(horizontal: 40),
                     child:Text(
-                      "Welcome to ToDO app",
+                      "Welcome to Sortify Todo app",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 17,

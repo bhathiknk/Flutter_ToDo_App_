@@ -104,7 +104,15 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
               ],
             ),
             SizedBox(height: 10),
-            ListView.builder(
+            tasks.isEmpty
+                ? Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'No tasks for $day',
+                style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+              ),
+            )
+                : ListView.builder(
               shrinkWrap: true,
               itemCount: tasks.length,
               itemBuilder: (context, index) {

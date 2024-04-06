@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 void main() {
   runApp(MaterialApp(
     home: MemoPadScreen(),
   ));
 }
-
 
 class MemoPadScreen extends StatelessWidget {
   @override
@@ -19,7 +17,6 @@ class MemoPadScreen extends StatelessWidget {
         title: Text('MemoPad'),
         centerTitle: true,
       ),
-
       body: NotesPage(title: 'Memo Pad'),
     );
   }
@@ -183,7 +180,14 @@ class _NotesPageState extends State<NotesPage> {
             color: Colors.white60,
           ),
           Expanded(
-            child: ListView.builder(
+            child: memoItems.isEmpty
+                ? Center(
+              child: Text(
+                'No memos available.',
+                style: TextStyle(fontSize: 18),
+              ),
+            )
+                : ListView.builder(
               shrinkWrap: true,
               itemCount: memoItems.length,
               itemBuilder: (context, index) {
@@ -240,8 +244,6 @@ class _NotesPageState extends State<NotesPage> {
     );
   }
 
-
-
   void _showFullTextDialog(String fullText) {
     showDialog(
       context: context,
@@ -262,13 +264,6 @@ class _NotesPageState extends State<NotesPage> {
         );
       },
     );
-  }
-
-
-  void setText(String text) {
-    setState(() {
-      _textEditingController.text = text;
-    });
   }
 
   Widget buildSaveButton() {
