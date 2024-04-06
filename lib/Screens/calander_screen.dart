@@ -284,13 +284,8 @@ class _CalanderScreenState extends State<CalanderScreen> {
         elevation: 1.8,
         centerTitle: true,
         title: Text('Calendar'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop(); // Navigate back when the back button is pressed
-          },
-        ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: ListView(

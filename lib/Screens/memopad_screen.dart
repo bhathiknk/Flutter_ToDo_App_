@@ -199,18 +199,20 @@ class _NotesPageState extends State<NotesPage> {
 
   Widget buildContainer(Map<String, dynamic> item) {
     final String cleanedText = item['content'].replaceAll(RegExp(r'<[^>]*>'), '');
-    final String limitedText = cleanedText.split(' ').take(12).join(' ');
+    final String limitedText = cleanedText.length > 35 // Adjust the limit as per your requirement
+        ? '${cleanedText.substring(0, 35)}...' // Display only the first 50 characters
+        : cleanedText;
 
-    return Container(
-      margin: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.white,
-      ),
-      height: 45,
-      width: double.infinity,
-      child: InkWell(
-        onTap: () => setText(item['content']),
+    return GestureDetector(
+      onTap: () => _showFullTextDialog(cleanedText),
+      child: Container(
+        margin: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.white,
+        ),
+        height: 45,
+        width: double.infinity,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
@@ -225,7 +227,11 @@ class _NotesPageState extends State<NotesPage> {
                   Icons.delete,
                   color: Colors.black,
                 ),
-                onPressed: () => _deleteMemo(item['id']),
+                onPressed: () {
+                  if (item.containsKey('id') && item['id'] != null) {
+                    _deleteMemo(item['id']);
+                  }
+                },
               ),
             ],
           ),
@@ -233,6 +239,31 @@ class _NotesPageState extends State<NotesPage> {
       ),
     );
   }
+
+
+
+  void _showFullTextDialog(String fullText) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Memo'),
+          content: SingleChildScrollView(
+            child: Text(fullText),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   void setText(String text) {
     setState(() {
